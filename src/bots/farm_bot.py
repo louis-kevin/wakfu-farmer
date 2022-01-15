@@ -43,6 +43,7 @@ class FarmBot(Bot):
         self.matcher_button = Matcher(PATH_BUTTON, threshold=0.8, file_find=[button_img])
         self.state = FarmBotState.SEARCHING
         self.has_captcha = True
+        self.controller = None
 
     def search(self):
         print('Searching Plant')
@@ -54,7 +55,7 @@ class FarmBot(Bot):
             self.stop()
             return False
         self.update_position(self.matcher_plant.position)
-        Controller.click(self.position, right=True)
+        self.controller.click(self.position, right=True)
         self.update_state(FarmBotState.SEARCHING_BUTTON)
         return True
 
@@ -81,6 +82,9 @@ class FarmBot(Bot):
         self.update_state(FarmBotState.SEARCHING)
 
     def run(self):
+        if self.controller is None:
+            raise Exception('Missing Controller on Bot')
+        
         while not self.stopped:
             if not self.has_screen() or self.captcha_on_screen:
                 continue

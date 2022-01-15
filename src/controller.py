@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 import pyautogui
 
-from utils import add_randomness, get_random_tween
+from src.utils import add_randomness, get_random_tween
 
 
 class Controller:
@@ -16,20 +16,20 @@ class Controller:
 
     def __init__(self, monitor_index=3):
         self.lock = Lock()
-        self.monitor = Controller.monitor(monitor_index)
+        self.monitor_data = Controller.monitor(monitor_index)
         self.sct = mss.mss()
         self.stopped = True
         self.screenshot = None
 
     def take_screenshot(self):
-        screenshot = self.sct.grab(self.monitor)
+        screenshot = self.sct.grab(self.monitor_data)
         screenshot = np.array(screenshot)
         screenshot = np.flip(screenshot[:, :, :3], 2)
         screenshot = cv2.cvtColor(screenshot, cv2.COLOR_BGR2RGB)
         y = self.OFFSET_Y
         x = 0
-        h = self.monitor['height'] - 200
-        w = self.monitor['width']
+        h = self.monitor_data['height'] - 200
+        w = self.monitor_data['width']
         screenshot = screenshot[y:y + h, x:x + w]
         return screenshot
 
@@ -54,13 +54,12 @@ class Controller:
             # print('FPS '+str(1/(time.time() - start)))
             start = time.time()
 
-    @staticmethod
-    def click(position, right=False, duration=None):
+    def click(self, position, right=False, duration=None):
         if duration is None:
             duration = 0.2 + random() / 2
         x, y = position
         y += Controller.OFFSET_Y
-        monitor = Controller.monitor()
+        monitor = self.monitor_data
         real_x = monitor['left'] + x
         real_y = monitor['top'] + y
         if position != pyautogui.position():
