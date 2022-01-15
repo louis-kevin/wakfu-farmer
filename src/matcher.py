@@ -32,7 +32,9 @@ class Matcher:
         self.rectangles = rectangles
         self.lock.release()
 
-    def match(self, screen):
+    def match(self, screen, last_positions=None):
+        if last_positions is None:
+            last_positions = []
         self.update_position()
         self.update_rectangles()
         self.screen = screen
@@ -60,10 +62,16 @@ class Matcher:
             return elem[4]
 
         self.rectangles.sort(key=take_max_value)
-        rectangle = self.rectangles[0]
+        while True:
+            if not len(self.rectangles):
+                return False
+            rectangle = self.rectangles.pop(0)
 
-        x, y, w, h, _ = rectangle
-        position = (x + int(w / 2), y + int(h / 2))
+            x, y, w, h, _ = rectangle
+            position = (x + int(w / 2), y + int(h / 2))
+            if position not in last_positions:
+                break
+
         self.update_position(position)
         return True
 

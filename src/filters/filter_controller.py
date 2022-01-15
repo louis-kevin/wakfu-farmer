@@ -23,6 +23,7 @@ class FilterController:
                                   separators=(',', ': '), ensure_ascii=False)
             outfile.write(json_str)
         print('Filter Saved')
+
     # create gui window with controls for adjusting arguments in real-time
     @staticmethod
     def init_control_gui(filter_data=None):

@@ -16,7 +16,10 @@ class Bot:
         self.state = None
         self.filter = None
         self.has_filter = False
+        self.captcha_on_screen = False
         self.has_captcha = False
+        self.has_target = False
+        self.last_positions = []
 
     def get_screen(self):
         return self.screen
@@ -39,9 +42,14 @@ class Bot:
         self.position = position
         self.lock.release()
 
-    def update_has_captcha(self, has_captcha):
+    def update_captcha_on_screen(self, captcha_on_screen):
         self.lock.acquire()
-        self.has_captcha = has_captcha
+        self.captcha_on_screen = captcha_on_screen
+        self.lock.release()
+
+    def update_has_target(self, has_target):
+        self.lock.acquire()
+        self.has_target = has_target
         self.lock.release()
 
     def is_stopped(self):

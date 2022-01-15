@@ -39,15 +39,17 @@ class FarmBot(Bot):
 
         button_img = FarmBot.ACTIONS[action]
         self.path = PATH_FARM + '/' + farm
-        self.matcher_plant = Matcher(self.path, threshold=0.6)
+        self.matcher_plant = Matcher(self.path, threshold=0.5)
         self.matcher_button = Matcher(PATH_BUTTON, threshold=0.8, file_find=[button_img])
         self.state = FarmBotState.SEARCHING
+        self.has_captcha = True
 
     def search(self):
         print('Searching Plant')
-        found = self.matcher_plant.match(self.screen)
+        found = self.matcher_plant.match(self.screen, self.last_positions)
 
         if not found:
+
             print('No plants found')
             self.stop()
             return False
@@ -60,9 +62,10 @@ class FarmBot(Bot):
         print('Searching Button')
         success = self.matcher_button.match(self.screen)
         if not success:
-            time.sleep(4)
+            self.last_positions.append(self.position)
             self.update_state(FarmBotState.SEARCHING)
             return False
+        self.last_positions = []
         self.update_position(self.matcher_button.position)
         Controller.click(self.position)
         self.update_state(FarmBotState.MOVING)
@@ -79,7 +82,7 @@ class FarmBot(Bot):
 
     def run(self):
         while not self.stopped:
-            if not self.has_screen() or self.has_captcha:
+            if not self.has_screen() or self.captcha_on_screen:
                 continue
             elif self.state == FarmBotState.SEARCHING:
                 self.search()
