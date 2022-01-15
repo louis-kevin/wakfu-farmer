@@ -1,14 +1,21 @@
+from src.bots.bot import Bot
 from src.matcher import Matcher
 
 PATH_CAPTCHA = 'images/captcha'
 PATH_MOB = 'mob.png'
 
 
-class CaptchaBot:
-    @staticmethod
-    def has_captcha():
-        positions = Matcher.match(PATH_CAPTCHA, file_find=[PATH_MOB])
-        if not positions:
-            return False
+class CaptchaBot(Bot):
+    def __init__(self):
+        super().__init__()
+        self.matcher = Matcher(PATH_CAPTCHA, file_find=[PATH_MOB], threshold=0.8)
 
-        return True
+    def run(self):
+        while not self.stopped:
+            if not self.has_screen():
+                continue
+
+            found = self.matcher.match(self.screen)
+            self.update_has_captcha(found)
+            if found:
+                self.update_position(self.matcher.position)

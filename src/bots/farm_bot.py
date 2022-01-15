@@ -79,7 +79,7 @@ class FarmBot(Bot):
 
     def run(self):
         while not self.stopped:
-            if not self.has_screen():
+            if not self.has_screen() or self.has_captcha:
                 continue
             elif self.state == FarmBotState.SEARCHING:
                 self.search()

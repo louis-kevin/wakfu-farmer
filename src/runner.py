@@ -1,6 +1,7 @@
 import cv2
 from pynput import mouse
 
+from src.bots.catpcha_bot import CaptchaBot
 from src.controller import Controller
 from src.filters.filter_controller import FilterController
 
@@ -8,6 +9,7 @@ from src.filters.filter_controller import FilterController
 class Runner:
     def __init__(self, bot, captcha=False, monitor_index=3):
         self.controller = Controller(monitor_index)
+        self.captcha_bot = CaptchaBot()
         self.bot = bot
         self.captcha = captcha
         self.stopped = False
@@ -19,14 +21,18 @@ class Runner:
             print('Stopping')
             return False
 
-    def show(self):
-        img = self.bot.get_screen()
-        if img is None:
+    def show(self, position=None, screen=None):
+        if screen is None:
+            screen = self.bot.get_screen()
+        if screen is None:
             return
-        position = self.bot.position
+
+        if position is None:
+            position = self.bot.position
+
         if position:
-            cv2.circle(img, position, 2, (0, 255, 0), 2)
-        cv2.imshow('screen', img)
+            cv2.circle(screen, position, 2, (0, 255, 0), 2)
+        cv2.imshow('screen', screen)
         cv2.waitKey(1)
 
     def init_gui_filter(self):
@@ -34,20 +40,28 @@ class Runner:
             FilterController.init_control_gui(self.bot.filter)
 
     def run(self, show=True):
+        self.init_gui_filter()
         self.listener.start()
         self.controller.start()
         self.bot.start()
+        captcha = self.captcha
+        if captcha:
+            self.captcha_bot.start()
 
         while not self.stopped:
-            if self.controller.screenshot is None:
+            screen = self.controller.screenshot
+            if screen is None:
                 continue
-            self.bot.update_screen(self.controller.screenshot)
-            if show:
-                self.show()
+            if captcha:
+                self.captcha_bot.update_screen(screen)
+                self.bot.update_has_captcha(self.captcha_bot.has_captcha)
+            self.bot.update_screen(screen)
+            self.show()
             key = cv2.waitKey(1) & 0xFF
             if key == ord('s'):
                 FilterController.save(self.bot.path, self.bot.name)
 
         self.controller.stop()
         self.bot.stop()
+        self.captcha_bot.stop()
         exit()

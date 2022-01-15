@@ -10,7 +10,7 @@ from src.runner import Runner
 
 
 def create_bot():
-    return FarmBot('cardo', 1)
+    return PlantBot()
     print('Olá ao WakBot Farmer 2000')
     print('O que você deseja fazer?')
     print('0 - Plantar')
@@ -63,4 +63,4 @@ def performance():
 if __name__ == '__main__':
     bot = create_bot()
     runner = Runner(bot)
-    runner.run()
+    runner.run(True)
