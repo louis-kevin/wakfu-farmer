@@ -17,6 +17,7 @@ class Runner:
         self.controller = Controller(monitor_index)
         self.captcha_bot = CaptchaBot()
         self.bot = bot
+        self.bot.controller = self.controller
         self.captcha = bot.has_captcha
         self.stopped = False
         self.listener = mouse.Listener(on_click=self.on_click)
@@ -95,7 +96,7 @@ class Runner:
             if screen is None:
                 continue
             self.update_screen_on_bot(self.bot, screen)
-            self.show(position=self.captcha_bot.position)
+            # self.show(position=self.captcha_bot.position)
             key = cv2.waitKey(1) & 0xFF
             if key == ord('s'):
                 FilterController.save(self.bot.path, self.bot.name)
