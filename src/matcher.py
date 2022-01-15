@@ -1,91 +1,103 @@
-import time
 from os import walk
-from threading import Thread
+from threading import Thread, Lock
 
 import cv2
-
-from controller import Controller
-from logger import Logger
+import numpy as np
 
 THRESHOLD_FLOOR = .90
 
 
-class Matcher(Thread):
+class Matcher:
+    def __init__(self, path, file_find=None, threshold=None, log=False):
+        self.screenshot = None
+        self.lock = Lock()
+        self.stopped = True
+        self.images = Matcher.files(path, file_find, log)
+        self.screen = None
+        self.log = log
+        self.rectangles = []
+        self.locations = []
+        self.position = None
+        self.threshold = threshold
+
+    def update_position(self, position=None):
+        self.lock.acquire()
+        self.position = position
+        self.lock.release()
+
+    def update_rectangles(self, rectangles=None):
+        if rectangles is None:
+            rectangles = []
+        self.lock.acquire()
+        self.rectangles = rectangles
+        self.lock.release()
+
+    def match(self, screen):
+        self.update_position()
+        self.update_rectangles()
+        self.screen = screen
+
+        if self.screen is None:
+            return False
+
+        images = self.images
+
+        threads = []
+
+        for index in range(len(images)):
+            floor = images[index]
+            thread = Thread(target=self.run, args=(floor, screen))
+            threads.insert(index, thread)
+            threads[index].start()
+
+        for index in range(len(images)):
+            threads[index].join()
+
+        if not list(self.rectangles):
+            return False
+
+        def take_max_value(elem):
+            return elem[4]
+
+        self.rectangles.sort(key=take_max_value)
+        rectangle = self.rectangles[0]
+
+        x, y, w, h, _ = rectangle
+        position = (x + int(w / 2), y + int(h / 2))
+        self.update_position(position)
+        return True
+
+    def run(self, floor, screen):
+        result = cv2.matchTemplate(screen, floor, cv2.TM_CCOEFF_NORMED)
+
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+
+        if self.threshold is not None and max_val < self.threshold:
+            return
+
+        w = floor.shape[1]
+        h = floor.shape[0]
+        value = [int(max_loc[0]), int(max_loc[1]), int(w), int(h), max_val]
+
+        rectangles = self.rectangles
+        rectangles.append(value)
+        self.update_rectangles(rectangles)
+
     @staticmethod
-    def match(path, log=False, file_find=None, threshold=THRESHOLD_FLOOR):
+    def files(path, file_find=None, log=False):
         if file_find is None:
             file_find = []
+
         images = []
-        if log:
-            print('Finding Images in ' + path)
         for (_, dir_names, filenames) in walk(path):
             for filename in filenames:
-                if file_find and not any(x == filename for x in file_find):
+                if file_find and filename not in file_find:
+                    continue
+                if '.png' not in filename:
                     continue
                 file = path + '/' + filename
                 images.append(cv2.imread(file))
         if not images:
             raise Exception('Images not found for path ' + path)
-        if log:
-            print('Found ' + str(len(images)) + ' in ' + path)
-            print('Taking a Screenshot')
-        screen = Controller.screenshot()
 
-        rectangles = []
-        threads = []
-        if log:
-            print('Creating Matchers')
-        for index in range(len(images)):
-            floor = images[index]
-            threads.insert(index, Matcher(screen, floor, index, threshold, log))
-            threads[index].start()
-
-        for index in range(len(images)):
-            threads[index].join()
-            rectangles += threads[index].rectangles
-
-        rectangles, weights = cv2.groupRectangles(rectangles, 1, 0.25)
-        positions = []
-        for x, y, w, h in rectangles:
-            position = (x + int(w / 2), y + int(h / 2))
-            positions.append(position)
-
-        if log:
-            Logger.show_rectangles(rectangles, screen)
-
-        return positions
-
-    def __init__(self, screen, floor, index, threshold, logs=False):
-        Thread.__init__(self)
-        self.screen = screen
-        self.floor = floor
-        self.rectangles = []
-        self.index = index
-        self.logs = logs
-        self.threshold = threshold
-
-    def run(self):
-        start = 0
-        if self.logs:
-            print('\nThread ' + str(self.index) + ' Running')
-            start = time.time()
-        scale = 0.5
-        a = cv2.resize(self.screen, (0, 0), fx=scale, fy=scale)
-        b = cv2.resize(self.floor, (0, 0), fx=scale, fy=scale)
-        a = cv2.cvtColor(a, cv2.COLOR_BGR2GRAY)
-        b = cv2.cvtColor(b, cv2.COLOR_BGR2GRAY)
-
-        result = cv2.matchTemplate(a, b, cv2.TM_CCOEFF_NORMED)
-
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-
-        w = self.floor.shape[1]
-        h = self.floor.shape[0]
-        self.rectangles.append([int(max_loc[0]), int(max_loc[1]), int(w), int(h)])
-        self.rectangles.append([int(max_loc[0]), int(max_loc[1]), int(w), int(h)])
-
-        if self.logs:
-            end = time.time()
-            result_time = end - start
-            print('Thread ' + str(self.index) + ' Finished in ' + str(result_time) + 's')
-        return self.rectangles
+        return images

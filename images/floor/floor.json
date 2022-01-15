@@ -1,0 +1,22 @@
+{
+    "edge": {
+        "canny1": 0,
+        "canny2": 0,
+        "dilateIter": 0,
+        "erodeIter": 0,
+        "hasEdge": false,
+        "kernelSize": 0
+    },
+    "hsv": {
+        "hMax": 36,
+        "hMin": 31,
+        "sAdd": 0,
+        "sMax": 255,
+        "sMin": 0,
+        "sSub": 255,
+        "vAdd": 0,
+        "vMax": 255,
+        "vMin": 0,
+        "vSub": 81
+    }
+}

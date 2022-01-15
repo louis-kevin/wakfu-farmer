@@ -149,3 +149,5 @@ pytweening==1.0.4
 PyYAML==6.0
 rubicon-objc==0.4.2
 six==1.16.0
+
+pynput~=1.7.6

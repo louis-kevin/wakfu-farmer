@@ -1,5 +1,7 @@
 import time
-from random import random
+from random import random, sample
+
+import pyautogui
 
 
 def add_randomness(n, random_factor_size=None):
@@ -30,3 +32,41 @@ def timeDiff(method):
     end = time.time()
     result_time = end - start
     print('Finished in ' + str(result_time) + 's')
+
+
+tween = [
+    pyautogui.easeInQuad,
+    pyautogui.easeOutQuad,
+    pyautogui.easeInOutQuad,
+    pyautogui.easeInCubic,
+    pyautogui.easeOutCubic,
+    pyautogui.easeInOutCubic,
+    pyautogui.easeInQuart,
+    pyautogui.easeOutQuart,
+    pyautogui.easeInOutQuart,
+    pyautogui.easeInQuint,
+    pyautogui.easeOutQuint,
+    pyautogui.easeInOutQuint,
+    pyautogui.easeInSine,
+    pyautogui.easeOutSine,
+    pyautogui.easeInOutSine,
+    pyautogui.easeInExpo,
+    pyautogui.easeOutExpo,
+    pyautogui.easeInOutExpo,
+    pyautogui.easeInCirc,
+    pyautogui.easeOutCirc,
+    pyautogui.easeInOutCirc,
+    pyautogui.easeInElastic,
+    pyautogui.easeOutElastic,
+    pyautogui.easeInOutElastic,
+    pyautogui.easeInBack,
+    pyautogui.easeOutBack,
+    pyautogui.easeInOutBack,
+    pyautogui.easeInBounce,
+    pyautogui.easeOutBounce,
+    pyautogui.easeInOutBounce,
+]
+
+
+def get_random_tween():
+    return sample(tween, 1)[0]
