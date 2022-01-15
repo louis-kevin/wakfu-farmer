@@ -96,7 +96,8 @@ class Runner:
             if screen is None:
                 continue
             self.update_screen_on_bot(self.bot, screen)
-            # self.show(position=self.captcha_bot.position)
+            if show:
+                self.show()
             key = cv2.waitKey(1) & 0xFF
             if key == ord('s'):
                 FilterController.save(self.bot.path, self.bot.name)

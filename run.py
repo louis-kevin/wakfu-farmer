@@ -3,5 +3,5 @@ from src.runner import Runner
 
 
 bot = create_bot()
-runner = Runner(bot, monitor_index=0)
-runner.run(False)
+runner = Runner(bot, monitor_index=2)
+runner.run()

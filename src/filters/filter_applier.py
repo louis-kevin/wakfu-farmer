@@ -28,10 +28,14 @@ class FilterApplier:
         return img
 
     @staticmethod
+    def has_file(file):
+        return os.path.exists(file)
+
+    @staticmethod
     def load_filter(path, name, from_control=True):
         filter_applier = FilterApplier(name, path, hsv=HsvFilter(), edge=EdgeFilter(), from_control=from_control)
         file = path + '/' + name + '.json'
-        if not os.path.exists(file):
+        if not FilterApplier.has_file(file):
             return filter_applier
 
         with open(file) as data_file:

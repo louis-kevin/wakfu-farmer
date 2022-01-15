@@ -10,7 +10,7 @@ from src.runner import Runner
 
 
 def create_bot():
-    return FarmBot('trevo', 1)
+    return FarmBot('nostril', 1)
     print('Olá ao WakBot Farmer 2000')
     print('O que você deseja fazer?')
     print('0 - Plantar')

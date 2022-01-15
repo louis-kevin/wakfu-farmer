@@ -1,8 +1,7 @@
 import time
-from threading import Lock, Thread
 
-import cv2
 import yaml
+from src.filters.filter_applier import FilterApplier
 
 from src.bots.bot import Bot
 from src.controller import Controller
@@ -39,11 +38,19 @@ class FarmBot(Bot):
 
         button_img = FarmBot.ACTIONS[action]
         self.path = PATH_FARM + '/' + farm
+        self.name = farm
         self.matcher_plant = Matcher(self.path, threshold=0.5)
         self.matcher_button = Matcher(PATH_BUTTON, threshold=0.8, file_find=[button_img])
         self.state = FarmBotState.SEARCHING
         self.has_captcha = True
         self.controller = None
+        self.load_filter()
+
+    def load_filter(self):
+        file = self.path + '/' + self.name
+        if FilterApplier.has_file(file):
+            self.filter = FilterApplier.load_filter(self.path, self.name)
+            self.has_filter = True
 
     def search(self):
         print('Searching Plant')
@@ -63,12 +70,14 @@ class FarmBot(Bot):
         print('Searching Button')
         success = self.matcher_button.match(self.screen)
         if not success:
+            print('Button Not found, going to next plant')
             self.last_positions.append(self.position)
             self.update_state(FarmBotState.SEARCHING)
             return False
         self.last_positions = []
+        print('Button Found')
         self.update_position(self.matcher_button.position)
-        Controller.click(self.position)
+        self.controller.click(self.position)
         self.update_state(FarmBotState.MOVING)
         print('Started Moving')
 
