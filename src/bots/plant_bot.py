@@ -1,6 +1,4 @@
 import time
-from random import random, sample
-from threading import Lock
 
 from src.bots.bot import Bot
 from src.controller import Controller
@@ -8,71 +6,74 @@ from src.filters.filter_applier import FilterApplier
 from src.matcher import Matcher
 
 PATH_FLOOR = 'images/floor'
-PATH_ICON = 'icons'
+PATH_SELECTED_FLOOR = 'images/selected_floor'
 
 
 class PlantBotState:
     INITIALIZING = 1
     SEARCHING = 2
-    MOVING = 3
+    PLANTING = 3
+    MOVING = 4
 
 
 class PlantBot(Bot):
     FARM_NAME = 'floor'
+    SELECTED_FLOOR_NAME = 'selected_floor'
 
     def __init__(self, shortcut='2'):
         super().__init__()
-        self.path = PATH_FLOOR
-        self.name = self.FARM_NAME
         self.matcher = Matcher(PATH_FLOOR, threshold=0.32)
-        self.selected_matcher = Matcher('images', file_find=['selected_floor.png'], threshold=0.67)
+        self.selected_matcher = Matcher(PATH_SELECTED_FLOOR, threshold=0.4)
         self.state = PlantBotState.INITIALIZING
         self.shortcut = shortcut
-        self.filter_floor = FilterApplier.load_filter(PATH_FLOOR, self.FARM_NAME, from_control=True)
-        self.filter = self.filter_floor
-        self.has_filter = True
-        self.processed_screen = None
-
+        self.filter_floor = FilterApplier.load_filter(PATH_FLOOR, self.FARM_NAME, from_control=False)
+        self.filter_selected_floor = FilterApplier.load_filter(PATH_SELECTED_FLOOR, self.SELECTED_FLOOR_NAME, from_control=False)
+        # self.filter = self.filter_floor
+        # self.has_filter = True
+    
+    def get_screen(self):
+        return self.filter_floor.apply(self.screen)
+    
     def search_floor(self):
         print('Searching Floor')
-        self.processed_screen = self.filter.apply(self.screen)
-        found = self.matcher.match(self.processed_screen, self.last_positions)
+        processed_screen = self.filter_floor.apply(self.screen)
+        found = self.matcher.match(processed_screen, self.last_positions)
         if not found:
             print('No Floor found')
-            self.stop()
-            return
+            return False
         self.update_position(self.matcher.position)
+        self.controller.move(self.position)
+        return True
 
     def has_selected_floor(self):
         print('Searching Selected Floor')
-        self.processed_screen = self.filter.apply(self.screen)
-        found = self.selected_matcher.match(self.screen)
+        processed_screen = self.filter_selected_floor.apply(self.screen)
+        found = self.selected_matcher.match(processed_screen)
         if not found:
             print('No Selected Floor found')
             return False
+        print('Has floor selected')
         return True
 
     def focus(self):
         print('Clicking')
-        Controller.click(self.position)
-        print('Moving')
-        self.update_state(PlantBotState.MOVING)
+        self.controller.click()
 
     def plant(self):
         if not self.has_selected_floor():
             print('Clicking with right')
-            Controller.click(self.position, right=True)
-        print('Pressing ' + self.shortcut)
-        Controller.press(self.shortcut)
-        time.sleep(random() / 2)
+            self.controller.click(right=True)
+            print('Pressing ' + self.shortcut)
+            Controller.press(self.shortcut)
+            time.sleep(0.1)
+       
         if not self.has_selected_floor():
             self.last_positions.append(self.position)
+            self.update_state(PlantBotState.SEARCHING)
             return
         self.last_positions = []
         print('Clicking')
-        Controller.click(self.position)
-        print('Moving')
-        self.update_state(PlantBotState.MOVING)
+        self.controller.click()
         print('Planting')
 
     def run(self):
@@ -80,12 +81,21 @@ class PlantBot(Bot):
             if not self.has_screen():
                 continue
             elif self.state == PlantBotState.INITIALIZING:
-                self.search_floor()
+                success = self.search_floor()
+                if not success:
+                    continue
                 self.focus()
-
-            elif self.state == PlantBotState.SEARCHING:
-                self.search_floor()
-                self.plant()
-
-            elif self.state == PlantBotState.MOVING and self.is_stopped():
                 self.update_state(PlantBotState.SEARCHING)
+            elif self.is_moving():
+                print('Moving')
+                time.sleep(0.5)
+                continue
+            elif self.state == PlantBotState.SEARCHING:
+                success = self.search_floor()
+                if not success:
+                    continue
+                self.update_state(PlantBotState.PLANTING)
+            elif self.state == PlantBotState.PLANTING:
+                self.plant()
+                self.update_state(PlantBotState.SEARCHING)
+                

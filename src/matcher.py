@@ -78,11 +78,10 @@ class Matcher:
     def run(self, floor, screen):
         result = cv2.matchTemplate(screen, floor, cv2.TM_CCOEFF_NORMED)
 
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
         if self.threshold is not None and max_val < self.threshold:
             return
-
         w = floor.shape[1]
         h = floor.shape[0]
         value = [int(max_loc[0]), int(max_loc[1]), int(w), int(h), max_val]

@@ -58,31 +58,6 @@ class Runner:
         bot.update_screen(screen)
         return bot.has_target
 
-    def run_endless(self, farmer, plant):
-        state = RunnerState.PLANTING
-        self.captcha_bot.start()
-
-        while not self.stopped:
-            screen = self.controller.screenshot
-            if screen is None:
-                continue
-            if state == RunnerState.PLANTING:
-                has_target = self.update_screen_on_bot(plant, screen)
-                if not has_target:
-                    state = RunnerState.FARMING
-            elif state == RunnerState.FARMING:
-                self.update_screen_on_bot(farmer, screen)
-
-            self.show()
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord('s'):
-                FilterController.save(self.bot.path, self.bot.name)
-
-        self.controller.stop()
-        self.bot.stop()
-        self.captcha_bot.stop()
-        exit()
-
     def run(self, show=True):
         self.init_gui_filter()
         self.controller.start()
@@ -99,8 +74,10 @@ class Runner:
             if show:
                 self.show()
             key = cv2.waitKey(1) & 0xFF
-            if key == ord('s'):
-                FilterController.save(self.bot.path, self.bot.name)
+            if key == ord('s') and self.bot.has_filter:
+                filter = self.bot.filter
+                if filter:
+                    FilterController.save(filter.path, filter.name)
 
         self.controller.stop()
         self.bot.stop()

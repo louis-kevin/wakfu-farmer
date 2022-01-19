@@ -54,7 +54,18 @@ class Controller:
             # print('FPS '+str(1/(time.time() - start)))
             start = time.time()
 
-    def click(self, position, right=False, duration=None):
+    def move_and_click(self, position, right=False, duration=None):
+        self.move(position, duration)
+        self.click(right)
+
+    def click(self, right=False):
+        if right:
+            pyautogui.rightClick()
+        else:
+            pyautogui.click()
+        time.sleep(0.1 + random() / 2)
+
+    def move(self, position, duration=None):
         if duration is None:
             duration = 0.2 + random() / 2
         x, y = position
@@ -64,14 +75,9 @@ class Controller:
         real_y = monitor['top'] + y
         if position != pyautogui.position():
             pyautogui.moveTo(add_randomness(real_x, 2), add_randomness(real_y, 2), duration,
-                             tween=get_random_tween())
+                            tween=get_random_tween())
         if duration is not None:
             time.sleep(duration)
-        if right:
-            pyautogui.rightClick()
-        else:
-            pyautogui.click()
-        time.sleep(0.1 + random() / 2)
 
     @staticmethod
     def press(key):

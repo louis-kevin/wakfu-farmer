@@ -39,7 +39,7 @@ class FarmBot(Bot):
         button_img = FarmBot.ACTIONS[action]
         self.path = PATH_FARM + '/' + farm
         self.name = farm
-        self.matcher_plant = Matcher(self.path, threshold=0.5)
+        self.matcher_plant = Matcher(self.path, threshold=0.4)
         self.matcher_button = Matcher(PATH_BUTTON, threshold=0.8, file_find=[button_img])
         self.state = FarmBotState.SEARCHING
         self.has_captcha = True
@@ -62,7 +62,7 @@ class FarmBot(Bot):
             self.stop()
             return False
         self.update_position(self.matcher_plant.position)
-        self.controller.click(self.position, right=True)
+        self.controller.move_and_click(self.position, right=True)
         self.update_state(FarmBotState.SEARCHING_BUTTON)
         return True
 
@@ -77,7 +77,7 @@ class FarmBot(Bot):
         self.last_positions = []
         print('Button Found')
         self.update_position(self.matcher_button.position)
-        self.controller.click(self.position)
+        self.controller.move_and_click(self.position)
         self.update_state(FarmBotState.MOVING)
         print('Started Moving')
 

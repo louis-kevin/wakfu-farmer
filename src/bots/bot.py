@@ -63,7 +63,7 @@ class Bot:
         result = cv2.matchTemplate(self.screen, self.last_screen, cv2.TM_CCOEFF_NORMED)
         similarity = result[0][0]
         # print('Movement detection similarity: {}'.format(similarity))
-        # time.sleep(0.8)
+    
         if similarity >= self.MOVEMENT_STOPPED_THRESHOLD:
             # print('Movement detected stop')
             return False
